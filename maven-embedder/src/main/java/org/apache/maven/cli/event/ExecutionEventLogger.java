@@ -141,6 +141,23 @@ public class ExecutionEventLogger
         }
     }
 
+    private boolean isSingleVersionedReactor( MavenSession session )
+    {
+        boolean result = true;
+
+        MavenProject topProject = session.getTopLevelProject();
+        List<MavenProject> sortedProjects = session.getProjectDependencyGraph().getSortedProjects();
+        for ( MavenProject mavenProject : sortedProjects )
+        {
+            if ( !topProject.getVersion().equals( mavenProject.getVersion() ) )
+            {
+                result = false;
+            }
+        }
+
+        return result;
+    }
+
     private void logReactorSummary( MavenSession session )
     {
         infoLine( '-' );
@@ -152,9 +169,8 @@ public class ExecutionEventLogger
         MavenExecutionResult result = session.getResult();
 
         List<MavenProject> projects = session.getProjects();
-        MavenProject lastProject = projects.get( projects.size() - 1 );
-        MavenProject topProject = session.getTopLevelProject();
 
+        boolean isSingleVersion = isSingleVersionedReactor( session );
         for ( MavenProject project : projects )
         {
             StringBuilder buffer = new StringBuilder( 128 );
@@ -162,8 +178,7 @@ public class ExecutionEventLogger
             buffer.append( project.getName() );
             buffer.append( ' ' );
 
-            if ( topProject.equals( project ) || lastProject.equals( project )
-                || !topProject.getVersion().equals( project.getVersion() ) )
+            if ( !isSingleVersion )
             {
                 buffer.append( project.getVersion() );
                 buffer.append( ' ' );
@@ -241,7 +256,14 @@ public class ExecutionEventLogger
 
         String wallClock = session.getRequest().getDegreeOfConcurrency() > 1 ? " (Wall Clock)" : "";
 
-        logger.info( "Total time: " + formatDuration( time ) + wallClock );
+        boolean isSingleVersion = isSingleVersionedReactor( session );
+
+        if ( isSingleVersion )
+        {
+            logger.info( "Version:     " + session.getTopLevelProject().getVersion() );
+        }
+
+        logger.info( "Total time:  " + formatDuration( time ) + wallClock );
 
         logger.info( "Finished at: " + formatTimestamp( finish ) );
     }
