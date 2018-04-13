@@ -92,6 +92,7 @@ under the License.
     <module>maven-embedder</module>
     <module>maven-compat</module>
     <module>apache-maven</module>
+    <module>version-comparator</module>
   </modules>
 
   <scm>
